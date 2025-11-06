@@ -6,11 +6,14 @@
 #define START_BUTTON_PIN 14
 #define STOP_BUTTON_PIN  15
 
-LineSensor line(2, 3, 4, 5, 6);
+LineSensor line(2, 3, 4, 5, 7);
 float correction = 0;
 float lastCorrection = 0;
 int error = 0;
 int lastError = 0;
+
+// Run control loop at a fixed 50ms period
+const unsigned long LOOP_PERIOD_MS = 50;
 
 bool isRunning = false;
 unsigned long start;
@@ -26,6 +29,7 @@ void setup() {
 
   motor_setup();
   line.setDebug(true);
+  
 
   pinMode(START_BUTTON_PIN, INPUT);
   pinMode(STOP_BUTTON_PIN, INPUT);
@@ -34,54 +38,68 @@ void setup() {
 }
 
 void loop() {
+  unsigned long frameStart = millis();
   checkStartButton();
   checkStopButton();
+ 
 
   if (!isRunning) {
     motor_stop();
     return;
   }
 
-  int kp, ki, kd;
+  float kp, ki, kd;
   int baseSpeed;
 
  
-  if (millis() - start < 10000) {
-    baseSpeed = 255;
-    kp = 170;
-    ki = 10;
-    kd = 80;
+  if (millis() - start < 1100000) {
+    baseSpeed = 140;
+    kp = 0.2;
+    ki = 0.1;
+    kd = 0.3;
   }
-  else if (millis() - start > 10000 && millis() - start < 500000) {
+  // else if (millis() - start > 11000 && millis() - start < 16000) {
+  //   Serial.println("Pass 1");
     
-    baseSpeed = 160;
-    kp = 200;
-    ki = 0;
-    kd = 90;
+  //   baseSpeed = 170;
+  //   kp = 300;
+  //   ki = 0;
+  //   kd = 50;
 
-    int newError = line.readError();
+  //   int newError = line.readError();
    
-    if (abs(lastError) > 2 && newError == 0) {
-      holdingCorrection = true;
-      holdStartTime = millis();
-      Serial.println(">>> Giữ correction");
-    }
+  //   if (abs(lastError) > 2 && newError == 0) {
+  //     holdingCorrection = true;
+  //     holdStartTime = millis();
+  //     Serial.println(">>> Giữ correction");
+  //   }
 
    
-    if (holdingCorrection && millis() - holdStartTime > 200) {
-      holdingCorrection = false;
-      Serial.println("Hết thời gian giữ correction.");
-    }
+  //   if (holdingCorrection && millis() - holdStartTime > 350) {
+  //     holdingCorrection = false;
+  //     Serial.println("Hết thời gian giữ correction.");
+  //   }
 
     
-    error = newError;
-  }
-  else {
-    baseSpeed = 250;
-    kp = 120;
-    ki = 90;
-    kd = 110;
-  }
+  //   error = newError;
+  // }
+  // else if (millis() - start > 16000 && millis() - start < 20000) {
+  //   Serial.println("Pass 1");
+    
+  //   baseSpeed = 100;
+  //   kp = 150;
+  //   ki = 50;
+  //   kd = 50;
+
+  // }
+   
+    
+  // else  {
+  //   baseSpeed = 250;
+  //   kp = 120;
+  //   ki = 90;
+  //   kd = 110;
+  // }
 
 
   PID pid(kp, ki, kd);
@@ -95,7 +113,7 @@ void loop() {
  
   int leftSpeed  = baseSpeed + correction;
   int rightSpeed = baseSpeed - correction;
-  leftSpeed  = constrain(leftSpeed, 0, 255);
+  leftSpeed  = constrain(leftSpeed , 0, 255);
   rightSpeed = constrain(rightSpeed, 0, 255);
 
   motor_move(leftSpeed, rightSpeed);
@@ -106,10 +124,22 @@ void loop() {
   Serial.print(" Hold: "); Serial.print(holdingCorrection);
   Serial.print(" L: "); Serial.print(leftSpeed);
   Serial.print(" R: "); Serial.println(rightSpeed);
+  
+
 
 
   lastError = error;
   lastCorrection = correction;
+
+  // Enforce 50ms loop time budget
+  unsigned long elapsed = millis() - frameStart;
+  if (elapsed < LOOP_PERIOD_MS) {
+    delay(LOOP_PERIOD_MS - elapsed);
+  } else {
+    
+    Serial.println("Loop overrun");
+  }
+  Serial.print(millis()- frameStart);
 }
 
 void checkStopButton() {
