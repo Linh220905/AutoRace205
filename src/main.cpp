@@ -46,11 +46,11 @@ void loop() {
   int baseSpeed;
 
  
-  if (millis() - start < 10000) {
-    baseSpeed = 255;
-    kp = 170;
-    ki = 10;
-    kd = 80;
+  if (millis() - start < 9000) {
+    baseSpeed = 245;
+    kp = 210;
+    ki = 80;
+    kd = 110;
   }
   else if (millis() - start > 10000 && millis() - start < 500000) {
     
@@ -94,7 +94,7 @@ void loop() {
 
  
   int leftSpeed  = baseSpeed + correction;
-  int rightSpeed = baseSpeed - correction;
+  int rightSpeed = baseSpeed - correction - 50;
   leftSpeed  = constrain(leftSpeed, 0, 255);
   rightSpeed = constrain(rightSpeed, 0, 255);
 

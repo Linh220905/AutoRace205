@@ -42,14 +42,14 @@ int LineSensor::readError() {
     case 0b11111: error = 0; break;  
     case 0b01111: error = -4; break;  
     case 0b00111: error = -3; break;
-    case 0b00011: error = -2; break;
+    case 0b00011: error = -3; break;
     case 0b10111: error = -2; break;
     case 0b10011: error = -1; break;
     case 0b00000: error = 0;  break; 
     case 0b11011: error = 0; break;
     case 0b11001: error = +1; break;
     case 0b11101: error = +2; break;
-    case 0b11000: error = +2; break;
+    case 0b11000: error = +3; break;
     case 0b11100: error = +3; break;
     case 0b11110: error = +4; break;
 
