@@ -9,8 +9,8 @@ PID::PID(float Kp, float Ki, float Kd) {
     _integral = 0;
     _previousError = 0;
     _filteredDerivative = 0; 
-    _minOutput = -255;
-    _maxOutput = 255;
+    _minOutput = -600;
+    _maxOutput = 600;
     _lastTime = millis();
 }
 

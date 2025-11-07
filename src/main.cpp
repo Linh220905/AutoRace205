@@ -13,7 +13,7 @@ int error = 0;
 int lastError = 0;
 
 // Run control loop at a fixed 50ms period
-const unsigned long LOOP_PERIOD_MS = 50;
+const unsigned long LOOP_PERIOD_MS = 60;
 
 bool isRunning = false;
 unsigned long start;
@@ -50,13 +50,14 @@ void loop() {
 
   float kp, ki, kd;
   int baseSpeed;
+ 
 
  
   if (millis() - start < 1100000) {
-    baseSpeed = 140;
-    kp = 0.2;
-    ki = 0.1;
-    kd = 0.3;
+    baseSpeed = 255;
+    kp = 1.1;
+    ki = 0.12;
+    kd = 0.4;
   }
   // else if (millis() - start > 11000 && millis() - start < 16000) {
   //   Serial.println("Pass 1");
@@ -113,10 +114,10 @@ void loop() {
  
   int leftSpeed  = baseSpeed + correction;
   int rightSpeed = baseSpeed - correction;
-  leftSpeed  = constrain(leftSpeed , 0, 255);
-  rightSpeed = constrain(rightSpeed, 0, 255);
+  leftSpeed  = constrain(leftSpeed , -255, 255);
+  rightSpeed = constrain(rightSpeed, -255, 255);
 
-  motor_move(leftSpeed, rightSpeed);
+  motor_move(leftSpeed, rightSpeed-30);
 
   
   Serial.print("Err: "); Serial.print(error);

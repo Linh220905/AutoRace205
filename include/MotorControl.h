@@ -6,8 +6,11 @@
 
 #define IN1 9  
 #define IN2 10
-#define IN3 12
-#define IN4 11
+#define IN3 13
+#define IN4 12
+#define ENA 6
+#define ENB 11
+
 
 
 
