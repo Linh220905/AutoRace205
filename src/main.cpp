@@ -18,6 +18,8 @@ int lastError = 0;
 bool isRunning = false;
 unsigned long start;
 
+PID pid(0, 0, 0);
+
 
 unsigned long holdUntilTime = 0; 
 const unsigned long HOLD_INTERSECTION_DURATION = 420;
@@ -95,7 +97,9 @@ void loop() {
     kd = 110;
     LOOP_INTERVAL = 20;
   }
-  PID pid(kp, ki, kd);
+
+  pid.set(kp,ki,kd);
+  
 
  
   if (LOOP_INTERVAL > 0 && (now - lastLoopTime < LOOP_INTERVAL)) {
@@ -116,13 +120,7 @@ void loop() {
         holdUntilTime = now + HOLD_INTERSECTION_DURATION;
         Serial.println(">>> GIỮ (Ngã rẽ)");
       }
-    } else {
-      
-      if (abs(error) == 4) {
-        holdUntilTime = now + HOLD_MAX_ERROR_DURATION;
-        Serial.println(">>> GIỮ (Biên)");
-      }
-    }
+    } 
   }
 
  
