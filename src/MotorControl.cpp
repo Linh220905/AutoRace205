@@ -1,49 +1,51 @@
 #include "MotorControl.h"
 
 void motor_setup() {
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
-  pinMode(IN3, OUTPUT);
-  pinMode(IN4, OUTPUT);
+  pinMode(M1_PWM, OUTPUT);
+  pinMode(M1_DIR, OUTPUT);
+  pinMode(M2_PWM, OUTPUT);
+  pinMode(M2_DIR, OUTPUT);
   motor_stop();
 }
 
 void motor_move(int speedLeft, int speedRight) {
-  
+  // Accept -255..255, where sign is direction
   speedLeft = constrain(speedLeft, MIN_SPEED, MAX_SPEED);
   speedRight = constrain(speedRight, MIN_SPEED, MAX_SPEED);
 
-
+  // LEFT motor
   if (speedLeft > 0) {
-    analogWrite(IN1, 0);
-    analogWrite(IN2, speedLeft);
+    digitalWrite(M1_DIR, LOW);           
+    analogWrite(M1_PWM, speedLeft);
   } else if (speedLeft < 0) {
-    analogWrite(IN1,-speedLeft );
-    analogWrite(IN2, 0);
+    digitalWrite(M1_DIR, HIGH);          
+    analogWrite(M1_PWM, -speedLeft);
   } else {
     motor_stopLeft();
   }
 
+  
   if (speedRight > 0) {
-    analogWrite(IN3, 0);
-    analogWrite(IN4, speedRight);
+    digitalWrite(M2_DIR, LOW);           
+    analogWrite(M2_PWM, speedRight);
   } else if (speedRight < 0) {
-   
-    analogWrite(IN4, -speedRight);
-    analogWrite(IN3, 0);
+    digitalWrite(M2_DIR, HIGH);         
+    analogWrite(M2_PWM, -speedRight);
   } else {
     motor_stopRight();
   }
 }
 
 void motor_stopLeft() {
-  analogWrite(IN1, 0);
-  analogWrite(IN2, 0);
+  analogWrite(M1_PWM, 0);
+
+  digitalWrite(M1_DIR, LOW);
 }
 
 void motor_stopRight() {
-  analogWrite(IN3, 0);
-  analogWrite(IN4, 0);
+  analogWrite(M2_PWM, 0);
+  
+  digitalWrite(M2_DIR, LOW);
 }
 
 void motor_stop() {

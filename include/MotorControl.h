@@ -3,11 +3,13 @@
 
 #include <Arduino.h>
 
+// Motor 1 (Left)
+#define M1_PWM 6
+#define M1_DIR 7
 
-#define IN1 9  
-#define IN2 10
-#define IN3 12
-#define IN4 11
+// Motor 2 (Right)
+#define M2_PWM 5
+#define M2_DIR 4
 
 
 #define MAX_SPEED 255
