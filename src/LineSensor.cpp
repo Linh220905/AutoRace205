@@ -30,7 +30,7 @@ int LineSensor::readError() {
 
   
   for (int i = 0; i < 5; i++) {
-    sensors[i] = digitalRead(_pins[i]);
+    sensors[i] = !digitalRead(_pins[i]);
     pattern = (pattern << 1) | sensors[i];
   }
 

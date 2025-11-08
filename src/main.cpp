@@ -8,7 +8,7 @@
 #define ULTRA_PIN A5
 
 LineSensor line(3, 8, 9, 10, 11);
-PID pid(0, 0, 0); // <<< FIX 1: Khai báo PID ở đây, một lần duy nhất
+ 
 
 float correction = 0;
 float lastCorrection = 0;
@@ -24,6 +24,7 @@ const unsigned long HOLD_INTERSECTION_DURATION = 420;
 const unsigned long HOLD_MAX_ERROR_DURATION = 150;   
 
 unsigned long lastLoopTime = 0;
+unsigned long LOOP_INTERVAL = 20;
 
 
 int TRIM_LEFT = 0;
@@ -51,16 +52,16 @@ void loop() {
     return;
   }
 
-  unsigned long now = millis(); // <<< FIX 2: Khai báo 'now' 1 lần ở đầu
+  unsigned long now = millis(); 
   unsigned long loopTime = now - start;
-  unsigned long LOOP_INTERVAL = 20; // Giá trị mặc định
+   
 
-  // --- 1. Xác định thông số theo thời gian ---
+ 
   float kp, ki, kd;
   int baseSpeed;
 
   if (loopTime < 3800) {
-    // Giai đoạn 1: 0 - 3.8s
+    
     baseSpeed = 255;
     kp = 0.53;
     ki = 0.05;
@@ -68,46 +69,47 @@ void loop() {
     LOOP_INTERVAL = 20;
   }
   else if (loopTime < 9000) {
-    // Giai đoạn 2: 3.8s - 9s
+   
     TRIM_LEFT = 0;
     baseSpeed = 200;
     kp = 0.87;
     ki = 0.003;
     kd = 0.482;
-    LOOP_INTERVAL = 19; // 19.8 không phải là unsigned long, làm tròn xuống
+    LOOP_INTERVAL = 19.8; 
   }
   else if (loopTime < 500000) {
-    // Giai đoạn 3: 9s - 500s (Áp dụng logic ngã rẽ)
+    
     TRIM_LEFT = 0;
     TRIM_RIGHT = 0;
     baseSpeed = 160;
     kp = 200;
     ki = 0;
     kd = 100;
-    LOOP_INTERVAL = 0; // Chạy nhanh nhất có thể
+    LOOP_INTERVAL = 0;
   }
   else {
-    // Giai đoạn 4: > 500s
+   
     baseSpeed = 250;
     kp = 120;
     ki = 90;
     kd = 110;
     LOOP_INTERVAL = 20;
   }
+  PID pid(kp, ki, kd);
 
-  // --- Kiểm tra khoảng thời gian loop ---
+ 
   if (LOOP_INTERVAL > 0 && (now - lastLoopTime < LOOP_INTERVAL)) {
     return;
   }
   lastLoopTime = now;
 
-  // --- 2. Đọc lỗi ---
-  error = line.readError(); // Đọc lỗi 1 lần duy nhất
 
-  // --- 3. Quyết định "Giữ" (Hold) ---
+  error = line.readError(); 
+
+  
   bool isHolding = (now < holdUntilTime);
 
-  if (!isHolding) { // Chỉ kiểm tra để "Giữ" nếu đang không "Giữ"
+  if (!isHolding) { 
     if (loopTime >= 9000 && loopTime < 500000) {
       
       if (abs(lastError) > 2 && error == 0) {
@@ -126,15 +128,15 @@ void loop() {
  
   isHolding = (now < holdUntilTime);
 
-  pid.set(kp, ki, kd);
+ 
 
   if (isHolding) {
-    correction = lastCorrection; // Đang giữ, dùng giá trị cũ
+    correction = lastCorrection; 
   } else {
-    correction = pid.compute(error); // Hết giữ, tính giá trị mới
+    correction = pid.compute(error); 
   }
 
-  // --- 6. Điều khiển Motor ---
+
   int leftSpeed  = baseSpeed + correction + TRIM_LEFT;
   int rightSpeed = baseSpeed - correction + TRIM_RIGHT;
   leftSpeed  = constrain(leftSpeed, -255, 255);
@@ -205,6 +207,6 @@ void resetAllStates() {
   lastError = 0;
   correction = 0;
   lastCorrection = 0;
-  holdUntilTime = 0; // <<< FIX 4: Reset biến "Giữ"
+  holdUntilTime = 0; 
   Serial.println("Da reset toan bo bien!");
 }
