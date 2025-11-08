@@ -19,6 +19,16 @@ unsigned long start;
 bool holdingCorrection = false;
 unsigned long holdStartTime = 0;
 
+
+unsigned long lastLoopTime = 0;
+unsigned long LOOP_INTERVAL = 20; 
+// Giữ correction 0.2s khi error ở biên (±4) trong giai đoạn đầu (<9000ms)
+const unsigned long HOLD_MAX_ERROR_DURATION = 150; // ms
+
+// Trim động cơ để cân lại tốc độ hai bánh (có thể điều chỉnh sau quan sát).
+int TRIM_LEFT = 0;    // giá trị dương làm bánh trái nhanh hơn
+int TRIM_RIGHT = 0;  
+
 void checkStartButton();
 void checkStopButton();
 void resetAllStates();
@@ -41,20 +51,61 @@ void loop() {
     return;
   }
 
-  int kp, ki, kd;
+  // ⏱ chỉ chạy phần PID + điều khiển mỗi 50ms
+  unsigned long now = millis();
+  if (now - lastLoopTime < LOOP_INTERVAL) return;
+  lastLoopTime = now;
+
+  // Kiểm tra timeout cho trạng thái giữ correction
+  if (holdingCorrection && (now - holdStartTime > HOLD_MAX_ERROR_DURATION)) {
+    holdingCorrection = false;
+    Serial.println("Het thoi gian giu correction.");
+  }
+
+  float kp, ki, kd;
   int baseSpeed;
 
-  if (millis() - start < 9000) {
-    baseSpeed = 225;
-    kp = 200;
-    ki = 100;
-    kd = 130;
+  if (millis() - start < 3800) {
+    baseSpeed = 255;
+    kp = 0.53;
+    ki = 0.05;
+    kd = 0.3;
   }
-  else if (millis() - start > 10000 && millis() - start < 500000) {
-    baseSpeed = 160;
-    kp = 200;
+  else if (millis() - start > 3800 && millis() - start < 9000)
+  {
+
+    TRIM_LEFT = 0;
+    LOOP_INTERVAL = 19.8;
+    
+    baseSpeed = 200;
+    kp = 0.87;
+    ki = 0.003;
+    kd = 0.482;
+
+    int newError = line.readError();
+
+    if (abs(lastError) >= 5) {
+      holdingCorrection = true;
+      holdStartTime = millis();
+      Serial.println(">>> Giữ correction");
+    }
+
+    if (holdingCorrection && millis() - holdStartTime > 2000) {
+      holdingCorrection = false;
+      Serial.println("Het thoi gian giu correction.");
+    }
+
+    error = newError;
+
+  }
+  else if (millis() - start >= 9000 && millis() - start < 500000) {
+    TRIM_LEFT = 0;
+    LOOP_INTERVAL = 20;
+    TRIM_RIGHT = 0;
+    baseSpeed = 85;
+    kp = 0.5;
     ki = 0;
-    kd = 90;
+    kd = 0.14;
 
     int newError = line.readError();
 
@@ -64,7 +115,7 @@ void loop() {
       Serial.println(">>> Giữ correction");
     }
 
-    if (holdingCorrection && millis() - holdStartTime > 170) {
+    if (holdingCorrection && millis() - holdStartTime > 1000) {
       holdingCorrection = false;
       Serial.println("Het thoi gian giu correction.");
     }
@@ -81,16 +132,36 @@ void loop() {
   PID pid(kp, ki, kd);
 
   if (holdingCorrection) {
+    // Đang giữ correction cũ
     correction = lastCorrection;
   } else {
-    error = line.readError();
-    correction = pid.compute(error);
+    int currentError = line.readError();
+    // Chỉ áp dụng giữ correction khi error = ±4 trong 9 giây đầu
+    if ((now - start) < 8500 && abs(currentError) == 4) {
+      holdingCorrection = true;
+      holdStartTime = now;
+      Serial.println(">>> Giu correction vi error ±4 (<9000ms)");
+      correction = lastCorrection; // dùng correction cũ ngay lập tức
+      error = currentError;
+    } else {
+      error = currentError;
+      correction = pid.compute(error);
+    }
   }
 
-  int leftSpeed  = baseSpeed + correction - 50;
-  int rightSpeed = baseSpeed - correction;
-  leftSpeed  = constrain(leftSpeed, 0, 255);
-  rightSpeed = constrain(rightSpeed, 0, 255);
+  // Áp dụng correction cân đối + trim điều chỉnh nhẹ, bỏ các offset lớn cố định gây lệch lâu dài
+  int leftSpeed  = baseSpeed + correction + TRIM_LEFT;
+  int rightSpeed = baseSpeed - correction + TRIM_RIGHT;
+  leftSpeed  = constrain(leftSpeed, -255, 255);
+  rightSpeed = constrain(rightSpeed, -255, 255);
+
+  if (millis() - start >= 8500 && millis() - start < 500000)
+  {
+    leftSpeed = max(-255,leftSpeed);
+    rightSpeed = max(-255, rightSpeed);
+  }
+
+   
 
   motor_move(leftSpeed, rightSpeed);
 
@@ -99,6 +170,7 @@ void loop() {
   Serial.print(" Hold: "); Serial.print(holdingCorrection);
   Serial.print(" L: "); Serial.print(leftSpeed);
   Serial.print(" R: "); Serial.println(rightSpeed);
+   
 
   lastError = error;
   lastCorrection = correction;
@@ -108,8 +180,7 @@ void loop() {
   float distance_cm = voltage * 10.0;
   Serial.println(distance_cm);
 
-
-  if (distance_cm < 0) {
+  if (distance_cm <0 ) {
     Serial.println("Vat can gan! Dung xe lai!");
     motor_stop();
     isRunning = false;
@@ -134,6 +205,7 @@ void checkStartButton() {
     start = millis();
     resetAllStates();
     isRunning = true;
+    lastLoopTime = millis(); 
     delay(300);
   }
 }
