@@ -62,22 +62,22 @@ void loop() {
   float kp, ki, kd;
   int baseSpeed;
 
-  if (loopTime < 3800) {
+  if (loopTime < 2700) {
     
     baseSpeed = 255;
-    kp = 0.53;
-    ki = 0.05;
-    kd = 0.3;
+    kp = 70;
+    ki = 0;
+    kd = 15;
     LOOP_INTERVAL = 20;
   }
   else if (loopTime < 9000) {
    
     TRIM_LEFT = 0;
-    baseSpeed = 200;
-    kp = 0.87;
-    ki = 0.003;
-    kd = 0.482;
-    LOOP_INTERVAL = 19.8; 
+    baseSpeed = 150;
+    kp = 200;
+    ki = 0.018;
+    kd = 15;
+    LOOP_INTERVAL = 0; 
   }
   else if (loopTime < 500000) {
     
@@ -170,7 +170,7 @@ void loop() {
   float distance_cm = voltage * 10.0;
   Serial.println(distance_cm);
 
-  if (distance_cm < 0) {
+  if (distance_cm < 6) {
     Serial.println("Vat can gan! Dung xe lai!");
     motor_stop();
     isRunning = false;
@@ -206,5 +206,6 @@ void resetAllStates() {
   correction = 0;
   lastCorrection = 0;
   holdUntilTime = 0; 
+  pid.reset();
   Serial.println("Da reset toan bo bien!");
 }
