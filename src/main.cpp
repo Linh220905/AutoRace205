@@ -22,7 +22,7 @@ PID pid(0, 0, 0);
 
 
 unsigned long holdUntilTime = 0; 
-const unsigned long HOLD_INTERSECTION_DURATION = 420;
+const unsigned long HOLD_INTERSECTION_DURATION = 300;
 const unsigned long HOLD_MAX_ERROR_DURATION = 150;   
 
 unsigned long lastLoopTime = 0;
@@ -30,7 +30,7 @@ unsigned long LOOP_INTERVAL = 20;
 
 
 int TRIM_LEFT = 0;
-int TRIM_RIGHT = 0;
+int TRIM_RIGHT = -85;
 
 void checkStartButton();
 void checkStopButton();
@@ -62,31 +62,31 @@ void loop() {
   float kp, ki, kd;
   int baseSpeed;
 
-  if (loopTime < 2700) {
+  if (loopTime < 3000) {
     
     baseSpeed = 255;
-    kp = 70;
-    ki = 0;
+    kp = 55;
+    ki = 0.0018;
     kd = 15;
     LOOP_INTERVAL = 20;
   }
-  else if (loopTime < 9000) {
+  else if (loopTime < 8000) {
    
     TRIM_LEFT = 0;
-    baseSpeed = 150;
-    kp = 200;
-    ki = 0.018;
-    kd = 15;
-    LOOP_INTERVAL = 0; 
+    baseSpeed = 255;
+    kp = 170;
+    ki = 0.0002;
+    kd = 140;
+    LOOP_INTERVAL = 23; 
   }
   else if (loopTime < 500000) {
     
     TRIM_LEFT = 0;
     TRIM_RIGHT = 0;
-    baseSpeed = 160;
-    kp = 200;
-    ki = 0;
-    kd = 100;
+    baseSpeed = 100;
+    kp = 280;
+    ki = 1;
+    kd = 120;
     LOOP_INTERVAL = 0;
   }
   else {
@@ -114,11 +114,12 @@ void loop() {
   bool isHolding = (now < holdUntilTime);
 
   if (!isHolding) { 
-    if (loopTime >= 9000 && loopTime < 500000) {
+    if (loopTime >= 8000 && loopTime < 5000000) {
       
       if (abs(lastError) > 2 && error == 0) {
         holdUntilTime = now + HOLD_INTERSECTION_DURATION;
         Serial.println(">>> GIỮ (Ngã rẽ)");
+         isRunning = false;
       }
     } 
   }
@@ -127,13 +128,20 @@ void loop() {
   isHolding = (now < holdUntilTime);
 
  
+static unsigned long holdError4Until = 0;
 
-  if (isHolding) {
-    correction = lastCorrection; 
-  } else {
-    correction = pid.compute(error); 
-  }
+if (error == 4 && loopTime > 1850 && loopTime < 18000) {
+    holdError4Until = now + 100;  // 0.3s
+ \
+}
 
+bool holdError4 = (now < holdError4Until);
+
+if (isHolding || holdError4) {
+    correction = lastCorrection;
+} else {
+    correction = pid.compute(error);
+}
 
   int leftSpeed  = baseSpeed + correction + TRIM_LEFT;
   int rightSpeed = baseSpeed - correction + TRIM_RIGHT;
@@ -144,6 +152,7 @@ void loop() {
   {
     leftSpeed = max(-50,leftSpeed);
     rightSpeed = max(-50, rightSpeed);
+   
   }
 
  
@@ -170,7 +179,7 @@ void loop() {
   float distance_cm = voltage * 10.0;
   Serial.println(distance_cm);
 
-  if (distance_cm < 6) {
+  if (distance_cm < 0) {
     Serial.println("Vat can gan! Dung xe lai!");
     motor_stop();
     isRunning = false;

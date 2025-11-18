@@ -15,22 +15,22 @@ void motor_move(int speedLeft, int speedRight) {
 
   // LEFT motor
   if (speedLeft > 0) {
-    digitalWrite(M1_DIR, LOW);           
-    analogWrite(M1_PWM, speedLeft);
+    digitalWrite(M2_DIR, LOW);           
+    analogWrite(M2_PWM, speedLeft);
   } else if (speedLeft < 0) {
-    digitalWrite(M1_DIR, HIGH);          
-    analogWrite(M1_PWM, -speedLeft);
+    digitalWrite(M2_DIR, HIGH);          
+    analogWrite(M2_PWM, -speedLeft);
   } else {
     motor_stopLeft();
   }
 
   
   if (speedRight > 0) {
-    digitalWrite(M2_DIR, LOW);           
-    analogWrite(M2_PWM, speedRight);
+    digitalWrite(M1_DIR, LOW);           
+    analogWrite(M1_PWM, speedRight);
   } else if (speedRight < 0) {
-    digitalWrite(M2_DIR, HIGH);         
-    analogWrite(M2_PWM, -speedRight);
+    digitalWrite(M1_DIR, HIGH);         
+    analogWrite(M1_PWM, -speedRight);
   } else {
     motor_stopRight();
   }
